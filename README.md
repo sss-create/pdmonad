@@ -23,9 +23,9 @@ loadedMsg = msg "999"
 main :: IO ()
 main = writePatch "mypatch.pd"
     [
-        newRow --> num --> dollarOne --> pdprint #2,
-        newRow --> lb --> hello #4 --> pdprint #5,
-        newRow --> lb --> loadedMsg #6 --> num
+        column --> num --> dollarOne --> pdprint #2,
+        column --> lb --> hello #4 --> pdprint #5,
+        column --> lb --> loadedMsg #6 --> num
     ]
 ```
 

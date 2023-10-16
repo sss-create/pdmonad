@@ -3,7 +3,7 @@
 #X msg 0 25 \$1;
 #X obj 0 50 print;
 #X obj 100 75 loadbang;
-#X msg 100 100 hello \, world;
+#X msg 100 100 hello\, world;
 #X obj 100 125 print;
 #X msg 200 150 999;
 #X connect 0 0 1 0;

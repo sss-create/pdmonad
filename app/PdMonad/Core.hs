@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 
-module Pdmonad where
+module PdMonad.Core where
 
 import Data.Maybe (fromMaybe)
 import Data.List (nubBy)
@@ -33,52 +33,6 @@ data PdPatch = PdPatch
     pdObjects :: [PdObject]
   , pdConnections :: [PdConnection]
   } deriving (Show)
-
-
-column :: PdPatch
-column = PdPatch [] []
-
-
-defPdObject :: PdObject
-defPdObject = PdObject Nothing "#X obj" (50, 75) ""
-
-
-obj :: T.Text -> PdObject
-obj args = defPdObject {objectArguments = args}
-
-
-mult :: Float -> PdObject
-mult args = defPdObject {objectArguments = T.concat ["* ", T.pack $ show args]}
-
-
-msg :: T.Text -> PdObject
-msg args = defPdObject {objectType = "#X msg", objectArguments = args}
-
-
-pdprint :: PdObject
-pdprint = defPdObject {objectArguments = "print"}
-
-
-loadbang :: PdObject
-loadbang = defPdObject {objectArguments = "loadbang"}
-
-
-bang :: PdObject
-bang =
-  let args = "bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;"
-  in defPdObject {objectArguments = args}
-
-
-toggle :: PdObject
-toggle =
-  let args = "tgl 19 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 1;"
-  in defPdObject {objectArguments = args}
-
-
-number :: PdObject
-number =
-  let args = "5 0 0 0 - - - 0;"
-  in defPdObject {objectType = "#X floatatom", objectArguments = args}
 
 
 updateObjectCoordinates :: (Int, PdObject) -> PdObject
@@ -121,7 +75,7 @@ placement pdPatch =
   in [PdPatch placedObjects (concatMap pdConnections pdPatch)]
 
 
-infixl 5 -->
+infixl 0 -->
 (-->) :: PdPatch -> PdObject -> PdPatch
 PdPatch objects connections --> nextObject =
   let newObjectList = objects ++ [nextObject]
@@ -132,5 +86,15 @@ PdPatch objects connections --> nextObject =
   in PdPatch newObjectList newConnections
 
 
+infixr 1 #
 (#) :: PdObject -> Int -> PdObject
 object # n = object {objectId = Just n}
+
+
+newCol = PdPatch [] []
+
+
+escapeSpecial :: T.Text -> T.Text
+escapeSpecial n = 
+  let specials = [",", "$"]
+  in foldl (\t s -> T.replace s (T.append "\\" s) t) n specials

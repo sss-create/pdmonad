@@ -3,19 +3,21 @@
 module Main where
 
 import PdMonad.Core
-import PdMonad.Identifiers as Pd
+import PdMonad.Identifiers
 
-num = Pd.number # 0
-lb = Pd.loadbang # 3
-dollarOne = Pd.msg "$1" # 1
-hello = Pd.msg "hello, world"
-loadedMsg = Pd.msg "999"
+num = number # 0
+lb = obj "loadbang" # 3
+dollarOne = msg "$1" # 1
+hello = msg "hello, world"
+loadedMsg = msg "999"
 
 
 main :: IO ()
 main =  writePatch "mypatch.pd"
     [
-        newCol --> num --> dollarOne --> pdprint # 2,
-        newCol --> lb --> hello # 4 --> pdprint # 5,
-        newCol --> lb --> loadedMsg # 6 --> num
+        PdPatch [] [] --> num --> dollarOne --> obj "print" # 2,
+        PdPatch [] [] --> lb --> hello # 4 --> obj "print" # 5,
+        PdPatch [] [] --> lb --> loadedMsg # 6 --> num,
+        PdPatch [] [] --> 
+            obj "osc~ 220" # 7 --> obj "*~ 1" # 8 --> obj "cyclone/snapshot~ 50" # 9 --> num
     ]

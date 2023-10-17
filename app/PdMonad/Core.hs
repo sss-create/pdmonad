@@ -3,7 +3,8 @@
 
 module PdMonad.Core where
 
-import Data.List (nubBy)
+import Data.Maybe (fromMaybe)
+import Data.List (nub)
 import Data.Function (on)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
@@ -11,7 +12,6 @@ import Data.Text.IO qualified as T
 import Data.GraphViz
 import Data.Graph.Inductive ( Gr, Graph(labNodes, mkGraph) )
 import Data.GraphViz.Attributes.Complete
-import Data.Maybe (fromMaybe)
 
 
 data PdObject = PdObject
@@ -69,11 +69,10 @@ writePatch name pdPatch = do
 -- https://stackoverflow.com/questions/58716167/appending-index-to-a-list-of-lists-in-haskell
 placement :: [PdPatch] -> IO [PdPatch]
 placement pdPatch = do
-  let objects = map pdObjects pdPatch
-      numberedObjects = nubBy ((==) `on` snd) . concat . zipWith (map . (,)) [0::Int ..] $ objects
+  let numberedObjects = nub . concatMap pdObjects $ pdPatch
       c = concatMap pdConnections pdPatch
   placedObjects <- graph $ patchToGraph numberedObjects c
-  let zippedCoords = zipWith (\x (_, j) -> j {objectCoordinates = x }) placedObjects numberedObjects
+  let zippedCoords = zipWith (\x j -> j {objectCoordinates = x }) placedObjects numberedObjects
   return [PdPatch zippedCoords (concatMap pdConnections pdPatch)]
 
 
@@ -93,25 +92,17 @@ infixr 1 #
 object # n = object {objectId = Just n}
 
 
-newCol :: PdPatch
-newCol = PdPatch [] []
-
-
 escapeSpecial :: T.Text -> T.Text
-escapeSpecial n = 
+escapeSpecial n =
   let specials = [",", "$"]
   in foldl (\t s -> T.replace s (T.append "\\" s) t) n specials
 
 
-getXY :: Attribute -> (Double, Double)
-getXY (Pos (PointPos (Point {xCoord = x, yCoord = y}))) = (x,y)
-
-
-patchToGraph :: [(Int, PdObject)] -> [PdConnection] -> Gr Int Int
-patchToGraph indexedObjects connections = 
-    let nodes = [(fromMaybe 0 $ objectId(snd i), fromMaybe 0 $ objectId (snd i)) | i <- indexedObjects]
-        c = [(fromMaybe 0 i, fromMaybe 0 j, 0) | PdConn i _ j _ <- connections]
-    in mkGraph nodes c
+patchToGraph :: [PdObject] -> [PdConnection] -> Gr Int Int
+patchToGraph indexedObjects connections =
+    let nodes = fmap ((\i -> (i, i)) . fromMaybe 0 . objectId) indexedObjects
+        edges = [(fromMaybe 0 i, fromMaybe 0 j, 0) | PdConn i _ j _ <- connections]
+    in mkGraph nodes edges
 
 
 -- | labNodes :: gr a b -> [LNode a]
@@ -121,7 +112,10 @@ patchToGraph indexedObjects connections =
 -- in [Attributes]
 graph :: Gr Int Int -> IO [(Double, Double)]
 graph gr = do
-    let nodeToCoords = concatMap (fst . snd) . labNodes
-        ga = [GraphAttrs [Layout Dot, RankDir FromBottom, NodeSep 1, RankSep [0.1]]]
     layoutedGraph <- graphToGraph nonClusteredParams { globalAttributes = ga } gr
     return . map getXY . nodeToCoords $ layoutedGraph
+    where
+      nodeToCoords = concatMap (fst . snd) . labNodes
+      ga = [GraphAttrs [Layout Dot, RankDir FromBottom, NodeSep 1, RankSep [0.02]]]
+      getXY :: Attribute -> (Double, Double)
+      getXY (Pos (PointPos (Point {xCoord = x, yCoord = y}))) = (x,y)

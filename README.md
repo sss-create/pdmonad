@@ -1,5 +1,5 @@
 # pdmonad
-## Write Pure Data patches inside Haskell.
+## Write Pure Data patches in Haskell.
 
 use with:
 ```
@@ -11,27 +11,31 @@ current patch creation:
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
-import Pdmonad
 
-num = number #0
-lb = loadbang #3
-dollarOne = msg "\\$1" #1
-hello = msg "hello \\, world"
-loadedMsg = msg "999"
+import PdMonad.Core
+import PdMonad.Identifiers as Pd
+
+num = Pd.number # 0
+lb = Pd.loadbang # 3
+dollarOne = Pd.msg "$1" # 1
+hello = Pd.msg "hello, world"
+loadedMsg = Pd.msg "999"
 
 
 main :: IO ()
-main = writePatch "mypatch.pd"
+main =  writePatch "mypatch.pd"
     [
-        column --> num --> dollarOne --> pdprint #2,
-        column --> lb --> hello #4 --> pdprint #5,
-        column --> lb --> loadedMsg #6 --> num
+        newCol --> num --> dollarOne --> pdprint # 2,
+        newCol --> lb --> hello # 4 --> pdprint # 5,
+        newCol --> lb --> loadedMsg # 6 --> num
     ]
 ```
 
-becomes:
+becomes (thanks to Graphviz auto layouting):
 
-![Pd created patch](resources/img/created.png)
+![Pd created patch](resources/img/layouted.png)
+
+
 ## Non-Native Identifier
 Use e.g. ```obj "pack f f f f"``` for creating objects without a (currently) native identifier. Remember to assign the ```objectId```.
 

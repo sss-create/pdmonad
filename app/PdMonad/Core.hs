@@ -3,18 +3,22 @@
 
 module PdMonad.Core where
 
-import Data.Maybe (fromMaybe)
 import Data.List (nubBy)
 import Data.Function (on)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+
+import Data.GraphViz
+import Data.Graph.Inductive ( Gr, Graph(labNodes, mkGraph) )
+import Data.GraphViz.Attributes.Complete
+import Data.Maybe (fromMaybe)
 
 
 data PdObject = PdObject
   {
     objectId :: Maybe Int
   , objectType :: T.Text
-  , objectCoordinates :: (Int, Int)
+  , objectCoordinates :: (Double, Double)
   , objectArguments :: T.Text
   } deriving (Show, Eq)
 
@@ -33,11 +37,6 @@ data PdPatch = PdPatch
     pdObjects :: [PdObject]
   , pdConnections :: [PdConnection]
   } deriving (Show)
-
-
-updateObjectCoordinates :: (Int, PdObject) -> PdObject
-updateObjectCoordinates (mid, mobj) =
-  mobj {objectCoordinates = (100 * mid, maybe 0 (* 25) $ objectId mobj)}
 
 
 objectToText :: PdObject -> T.Text
@@ -59,20 +58,23 @@ connectionToText connection =
 
 
 writePatch :: String -> [PdPatch] -> IO ()
-writePatch name pdPatch =
-  let textObjects = concatMap (map objectToText . pdObjects) $ placement pdPatch
+writePatch name pdPatch = do
+  iop <- placement pdPatch
+  let textObjects = concatMap (map objectToText . pdObjects) iop
       textConnections = concatMap (map connectionToText . pdConnections) pdPatch
       canvas = [T.pack "#N canvas 0 50 450 300 12;"]
-  in T.writeFile name $ T.unlines $ concat [canvas, textObjects, textConnections]
+  T.writeFile name $ T.unlines $ concat [canvas, textObjects, textConnections]
 
 
 -- https://stackoverflow.com/questions/58716167/appending-index-to-a-list-of-lists-in-haskell
-placement :: [PdPatch] -> [PdPatch]
-placement pdPatch =
+placement :: [PdPatch] -> IO [PdPatch]
+placement pdPatch = do
   let objects = map pdObjects pdPatch
-      numberedObjects = nubBy ((==) `on` snd) . concat . zipWith (map . (,)) [0..] $ objects
-      placedObjects = fmap updateObjectCoordinates numberedObjects
-  in [PdPatch placedObjects (concatMap pdConnections pdPatch)]
+      numberedObjects = nubBy ((==) `on` snd) . concat . zipWith (map . (,)) [0::Int ..] $ objects
+      c = concatMap pdConnections pdPatch
+  placedObjects <- graph $ patchToGraph numberedObjects c
+  let zippedCoords = zipWith (\x (_, j) -> j {objectCoordinates = x }) placedObjects numberedObjects
+  return [PdPatch zippedCoords (concatMap pdConnections pdPatch)]
 
 
 infixl 0 -->
@@ -91,6 +93,7 @@ infixr 1 #
 object # n = object {objectId = Just n}
 
 
+newCol :: PdPatch
 newCol = PdPatch [] []
 
 
@@ -98,3 +101,27 @@ escapeSpecial :: T.Text -> T.Text
 escapeSpecial n = 
   let specials = [",", "$"]
   in foldl (\t s -> T.replace s (T.append "\\" s) t) n specials
+
+
+getXY :: Attribute -> (Double, Double)
+getXY (Pos (PointPos (Point {xCoord = x, yCoord = y}))) = (x,y)
+
+
+patchToGraph :: [(Int, PdObject)] -> [PdConnection] -> Gr Int Int
+patchToGraph indexedObjects connections = 
+    let nodes = [(fromMaybe 0 $ objectId(snd i), fromMaybe 0 $ objectId (snd i)) | i <- indexedObjects]
+        c = [(fromMaybe 0 i, fromMaybe 0 j, 0) | PdConn i _ j _ <- connections]
+    in mkGraph nodes c
+
+
+-- | labNodes :: gr a b -> [LNode a]
+-- LNode a :: (Node, a)
+-- Node :: Int
+-- Layout = GraphvizCommand
+-- in [Attributes]
+graph :: Gr Int Int -> IO [(Double, Double)]
+graph gr = do
+    let nodeToCoords = concatMap (fst . snd) . labNodes
+        ga = [GraphAttrs [Layout Dot, RankDir FromBottom, NodeSep 1, RankSep [0.1]]]
+    layoutedGraph <- graphToGraph nonClusteredParams { globalAttributes = ga } gr
+    return . map getXY . nodeToCoords $ layoutedGraph

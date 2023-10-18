@@ -16,7 +16,6 @@ import Data.Text.IO qualified as T
 ------------------------------------------------------------------------
 -- | type creations
 
-
 data PdObject = PdObject
   { objectId :: Maybe Int,
     objectType :: T.Text,
@@ -44,7 +43,6 @@ data PdPatch = PdPatch
 
 ------------------------------------------------------------------------
 -- | patch synthesis
-
 
 writePatch :: String -> [PdPatch] -> IO ()
 writePatch name pdPatch = do
@@ -87,7 +85,6 @@ connectionToText connection =
 ------------------------------------------------------------------------
 -- | custom operators
 
-
 infixl 0 -->
 (-->) :: PdPatch -> PdObject -> PdPatch
 PdPatch objects connections --> nextObject =
@@ -106,7 +103,6 @@ object # n = object {objectId = Just n}
 
 ------------------------------------------------------------------------
 -- | graph methods
-
 
 patchToGraph :: [PdObject] -> [PdConnection] -> Gr Int Int
 patchToGraph indexedObjects connections =

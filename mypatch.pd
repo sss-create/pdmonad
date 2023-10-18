@@ -5,7 +5,7 @@
 #X obj 90.0 62.0 loadbang;
 #X msg 27.0 106.0 hello\, world;
 #X obj 27.0 150.0 print;
-#X msg 153.0 106.0 999;
+#X msg 153.0 106.0 3;
 #X obj 279.0 18.0 osc~ 220;
 #X obj 279.0 62.0 *~ 1;
 #X obj 279.0 106.0 cyclone/snapshot~ 50;

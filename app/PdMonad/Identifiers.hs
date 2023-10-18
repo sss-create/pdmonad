@@ -4,11 +4,7 @@
 module PdMonad.Identifiers where
 
 import PdMonad.Core
-import Data.Maybe (fromMaybe)
-import Data.List (nubBy)
-import Data.Function (on)
 import Data.Text qualified as T
-import Data.Text.IO qualified as T
 
 
 defPdObject :: PdObject
@@ -19,20 +15,8 @@ obj :: T.Text -> PdObject
 obj args = defPdObject {objectArguments = escapeSpecial args}
 
 
-mult :: Float -> PdObject
-mult args = defPdObject {objectArguments = T.concat ["* ", T.pack $ show args]}
-
-
 msg :: T.Text -> PdObject
 msg args = defPdObject {objectType = "#X msg", objectArguments = escapeSpecial args}
-
-
-pdprint :: PdObject
-pdprint = defPdObject {objectArguments = "print"}
-
-
-loadbang :: PdObject
-loadbang = defPdObject {objectArguments = "loadbang"}
 
 
 bang :: PdObject
@@ -47,7 +31,13 @@ toggle =
   in defPdObject {objectArguments = args}
 
 
-number :: PdObject
-number =
+num :: PdObject
+num =
   let args = "5 0 0 0 - - - 0;"
   in defPdObject {objectType = "#X floatatom", objectArguments = args}
+
+
+escapeSpecial :: T.Text -> T.Text
+escapeSpecial n =
+  let specials = [",", "$"]
+  in foldl (\t s -> T.replace s (T.append "\\" s) t) n specials

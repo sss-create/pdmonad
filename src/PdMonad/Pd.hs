@@ -1,10 +1,31 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module PdMonad.Identifiers where
+module PdMonad.Pd where
 
-import PdMonad.Core
 import Data.Text qualified as T
+
+
+data PdObject = PdObject
+  { objectId          :: Maybe Int
+  , objectType        :: T.Text
+  , objectCoordinates :: (Double, Double)
+  , objectArguments   :: T.Text
+  } deriving (Show, Eq)
+
+
+data PdConnection = PdConn
+  { source :: Maybe Int
+  , outlet :: Int
+  , sink   :: Maybe Int
+  , inlet  :: Int
+  } deriving (Show)
+
+
+data PdPatch = PdPatch
+  { pdObjects     :: [PdObject]
+  , pdConnections :: [PdConnection]
+  } deriving (Show)
 
 
 defPdObject :: PdObject

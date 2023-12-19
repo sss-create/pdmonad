@@ -1,6 +1,6 @@
 # pdmonad
 ## Write Pure Data patches in Haskell.
-PdMonad is an eDSL/library/program for writing Pure Data patches through text. 
+PdMonad is an eDSL/library for writing Pure Data patches through text. 
 
 It uses [graphviz](https://hackage.haskell.org/package/graphviz) for auto layouting the generated patch.
 
@@ -20,12 +20,13 @@ three = msg "3"
 
 
 main :: IO ()
-main =  writePatch "mypatch.pd"
-  [
-	number --> variable --> obj "print" # 2,
-	lbang --> hworld # 4 --> obj "print" # 5,
-	lbang --> three # 6 --> number,
-	obj "osc~ 220" # 7 --> obj "*~ 1" # 8 --> obj "cyclone/snapshot~ 50" # 9 --> num
+main = 
+  writePatch "mypatch.pd" $ preparePatch
+  [ 
+    number --> variable --> (obj "print" # 2),
+    lbang --> (hworld # 4) --> (obj "print" # 5),
+    lbang --> (three # 6) --> number,
+    (obj "osc~ 220" # 7) --> (obj "*~ 1" # 8) --> (obj "cyclone/snapshot~ 50" # 9) --> num
   ]
 ```
 

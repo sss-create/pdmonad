@@ -1,3 +1,5 @@
+![example workflow](https://github.com/sss-create/pdmonad/actions/workflows/haskell.yml/badge.svg)
+
 # pdmonad
 ## Write Pure Data patches in Haskell.
 PdMonad is an eDSL/library for writing Pure Data patches through text. 
@@ -20,8 +22,7 @@ three = msg "3"
 
 
 main :: IO ()
-main = 
-  writePatch "mypatch.pd" $ preparePatch
+main = writePatch "mypatch.pd" $ preparePatch
   [ 
     number --> variable --> (obj "print" # 2),
     lbang --> (hworld # 4) --> (obj "print" # 5),
